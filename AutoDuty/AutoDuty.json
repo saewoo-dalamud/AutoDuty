@@ -1,12 +1,12 @@
 {
   "Author": "Herculezz, erdelf",
-  "Name": "AutoDuty",
-  "Punchline": "AutoDuty",
+  "Name": "saewoo's AutoDuty",
+  "Punchline": "saewoo's customized AutoDuty",
   "Description": "A plugin to run dungeons for you with Trust, Duty Support, Squadrons, Variants, and Regular, Requires BossMod, vnavmesh and a Rotation Plugin (Wrath Combo, BossMod AutoRotation, or RotationSolverReborn)",
   "InternalName": "AutoDuty",
   "DalamudApiLevel": "15",
   "MinimumDalamudVersion": "15.0.0.0",
-  "RepoUrl": "https://github.com/erdelf/AutoDuty",
+  "RepoUrl": "https://github.com/saewoo-dalamud/AutoDuty",
   "IconUrl": "https://puni.sh/api/plugins/icon/54",
   "ImageUrls": [
     "https://s3.puni.sh/media/plugin/54/image-15l1o9gf3yg.png",

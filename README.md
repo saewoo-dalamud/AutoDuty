@@ -1,4 +1,9 @@
-# AutoDuty
+# saewoo's AutoDuty
+
+> **Fork notice:** This repository is a customized fork of [erdelf/AutoDuty](https://github.com/erdelf/AutoDuty). For the original source, documentation, and upstream releases, please refer to the erdelf repository. This fork contains saewoo-specific changes only.
+
+Fork-specific changes: [CHANGELOG.md](CHANGELOG.md)<br>
+Contributing to this fork: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 <img align="right" width="150" height="150" src="logo.png">
 
