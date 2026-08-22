@@ -15,9 +15,19 @@ namespace AutoDuty.Helpers
         public override string[]? Commands { get; init; } = ["autoequip", "equiprec"];
         public override string? CommandDescription { get; init; } = "Equips recommended gear";
 
+        private GearsetUpdateSource? requestedSource;
+        private bool suppressPortraitUpdate;
+
+        internal static void Invoke(GearsetUpdateSource source, bool suppressPortraitUpdate = false)
+        {
+            Instance.requestedSource = source;
+            Instance.suppressPortraitUpdate = suppressPortraitUpdate;
+            Instance.Start();
+        }
+
         internal override void Start()
         {
-            switch (Configuration.AutoEquipRecommendedGearSource)
+            switch (this.requestedSource ?? Configuration.AutoEquipRecommendedGearSource)
             {
                 case GearsetUpdateSource.Gearsetter when Gearsetter_IPCSubscriber.IsEnabled:
                     this.TimeOut = 10_000;
@@ -67,7 +77,11 @@ namespace AutoDuty.Helpers
             this._statesExecuted = AutoEquipState.None;
             this._index          = 0;
             this._gearset        = null;
-            PortraitHelper.Invoke();
+            this.requestedSource = null;
+            bool updatePortrait = !this.suppressPortraitUpdate;
+            this.suppressPortraitUpdate = false;
+            if (updatePortrait)
+                PortraitHelper.Invoke();
         }
 
         [Flags]

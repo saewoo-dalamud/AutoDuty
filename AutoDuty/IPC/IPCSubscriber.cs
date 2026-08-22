@@ -29,6 +29,8 @@ namespace AutoDuty.IPC
 
         internal static bool IsBusy() => 
             AutoRetainer.IsBusy();
+        internal static bool IsItemProtected(uint itemId) =>
+            AutoRetainer.IsItemProtected(itemId);
         internal static bool AreAnyRetainersAvailableForCurrentChara() => 
             AutoRetainer.AreAnyRetainersAvailableForCurrentChara();
 

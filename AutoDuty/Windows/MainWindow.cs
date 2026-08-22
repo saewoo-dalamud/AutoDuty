@@ -232,13 +232,18 @@ public sealed class MainWindow : Window, IDisposable
                 {
                     if (ImGui.Button(Loc.Get("Overlay.Button.Equip")))
                     {
-                        AutoEquipHelper.Invoke();
+                        if (AutoDuty.Configuration.AutoEquipRecommendedGearSource == GearsetUpdateSource.Gearsetter && Gearsetter_IPCSubscriber.IsEnabled)
+                            GearsetterGearsetUpdateHelper.Invoke();
+                        else
+                            AutoEquipHelper.Invoke();
                         //else
                         //ShowPopup("", "");
                     }
 
                     //if ()
-                    ToolTip(Loc.Get("Overlay.Tooltip.Equip"));
+                    ToolTip(Loc.Get(AutoDuty.Configuration.AutoEquipRecommendedGearSource == GearsetUpdateSource.Gearsetter && Gearsetter_IPCSubscriber.IsEnabled
+                                        ? "Overlay.Tooltip.EquipAllGearsets"
+                                        : "Overlay.Tooltip.Equip"));
                     //else
                     //ToolTip("");
                 }

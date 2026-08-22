@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using AutoDuty.Services.Gearsetter;
 
 namespace AutoDuty.Helpers
 {
@@ -28,11 +29,14 @@ namespace AutoDuty.Helpers
         internal override void Start()
         {
             this._maxDesynthLevel = PlayerHelper.GetMaxDesynthLevel();
+            this._gearsetterProtectedSlots = GearsetterRecommendationService.CollectAutoDesynthProtectedSlots();
             if(this.NextCategory(true))
                 base.Start();
         }
 
         private float _maxDesynthLevel = 1;
+
+        private HashSet<(InventoryType InventoryType, int Slot)> _gearsetterProtectedSlots = [];
 
         private AgentSalvage.SalvageItemCategory curCategory;
 
@@ -134,6 +138,12 @@ namespace AutoDuty.Helpers
 
                                 if (gearsetItemIds.Contains(inventoryItem->GetItemId()))
                                     continue;
+                            }
+
+                            if (this._gearsetterProtectedSlots.Contains((item.InventoryType, (int)item.InventorySlot)))
+                            {
+                                this.DebugLog($"Skipping Item({i}): {itemSheetRow.Value.Name} - protected by Gearsetter as an upgrade for another gearset");
+                                continue;
                             }
 
                             this.DebugLog($"Salvaging Item({i}): {itemSheetRow.Value.Name} {inventoryItem->ItemId} {inventoryItem->GetItemId()} {inventoryItem->GetBaseItemId()} with iLvl {itemLevel} because our desynth level is {desynthLevel}");

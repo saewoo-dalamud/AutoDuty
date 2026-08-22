@@ -1,12 +1,15 @@
 ﻿using AutoDuty.IPC;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Services;
+using AutoDuty.Services.Gearsetter;
 using ECommons.DalamudServices;
+using ECommons.Logging;
 using ECommons.Throttlers;
 using System.Numerics;
 
 namespace AutoDuty.Helpers
 {
+    using System;
     using ECommons.ExcelServices;
 
     internal class GCTurninHelper : ActiveHelperBase<GCTurninHelper>
@@ -21,20 +24,74 @@ namespace AutoDuty.Helpers
 
         protected override int TimeOut { get; set; } = 600_000;
 
+        private enum TurninPhase
+        {
+            UpdatingGearsets,
+            RestoringGearset,
+            Protecting,
+            TurningIn,
+        }
+
+        private readonly GearsetterGearsetUpdateService gearsetUpdate = new();
+        private readonly GearsetterGCTurninProtectionService gearsetterProtection = new();
+        private TurninPhase phase = TurninPhase.TurningIn;
+        private bool turninEnqueued;
+
         internal override void Start()
         {
+            if (State == ActionState.Running)
+            {
+                this.DebugLog(this.Name + " already running");
+                return;
+            }
+
             if (!AutoRetainer_IPCSubscriber.IsEnabled)
                 Svc.Log.Info("GC Turnin Requires AutoRetainer plugin. Get @ https://love.puni.sh/ment.json");
             else if (PlayerHelper.GetGrandCompanyRank() <= 5)
                 Svc.Log.Info("GC Turnin requires GC Rank 6 or Higher");
             else
+            {
+                try
+                {
+                    if (Configuration.AutoGCTurninProtectGearsetterUpgrades && Gearsetter_IPCSubscriber.IsEnabled)
+                    {
+                        this.gearsetUpdate.Prepare();
+                        this.phase = TurninPhase.UpdatingGearsets;
+                    }
+                    else
+                    {
+                        this.gearsetUpdate.Reset();
+                        this.gearsetterProtection.Reset();
+                        this.phase = TurninPhase.TurningIn;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.ReportGearsetUpdateFailure(ex.Message);
+                    return;
+                }
+
+                this.turninStarted = false;
+                this.turninEnqueued = false;
                 base.Start();
+            }
         }
 
         internal override void Stop() 
         {
-            this.turninStarted = false;
             GotoHelper.ForceStop();
+            this.turninStarted = false;
+            this.turninEnqueued = false;
+
+            if (State == ActionState.Running && this.gearsetUpdate.IsActive)
+            {
+                this.gearsetUpdate.CancelAndRestore();
+                this.phase = TurninPhase.RestoringGearset;
+                return;
+            }
+
+            this.gearsetUpdate.Reset();
+            this.gearsetterProtection.Reset();
             base.Stop();
         }
 
@@ -82,10 +139,59 @@ namespace AutoDuty.Helpers
 
         protected override void HelperUpdate(IFramework framework)
         {
-            if (Plugin.States.HasFlag(PluginState.Navigating))
+            if (Plugin.States.HasFlag(PluginState.Navigating) && this.phase != TurninPhase.RestoringGearset)
             {
                 this.DebugLog("AutoDuty is Started, Stopping GCTurninHelper");
                 this.Stop();
+                return;
+            }
+
+            if (this.phase is TurninPhase.UpdatingGearsets or TurninPhase.RestoringGearset)
+            {
+                GearsetterGearsetUpdateProgress progress = this.gearsetUpdate.UpdateNext();
+                if (progress == GearsetterGearsetUpdateProgress.InProgress)
+                    return;
+
+                if (progress == GearsetterGearsetUpdateProgress.Failed)
+                {
+                    this.ReportGearsetUpdateFailure(this.gearsetUpdate.LastError);
+                    this.gearsetUpdate.Reset();
+                    this.gearsetterProtection.Reset();
+                    base.Stop();
+                    return;
+                }
+
+                this.InfoLog($"Updated {this.gearsetUpdate.TargetCount} Gearsetter gearset(s) and restored the original gearset");
+                this.gearsetUpdate.Reset();
+                try
+                {
+                    if (!this.PrepareArmouryProtection())
+                    {
+                        base.Stop();
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.ReportProtectionFailure(ex.Message);
+                    base.Stop();
+                }
+                return;
+            }
+
+            if (this.phase == TurninPhase.Protecting)
+            {
+                GearsetterProtectionProgress progress = this.gearsetterProtection.MoveNext();
+                if (progress == GearsetterProtectionProgress.Complete)
+                {
+                    this.InfoLog($"Moved {this.gearsetterProtection.PlannedMoveCount} Gearsetter upgrade(s) into the Armoury Chest");
+                    this.phase = TurninPhase.TurningIn;
+                }
+                else if (progress == GearsetterProtectionProgress.Failed)
+                {
+                    this.ReportProtectionFailure(this.gearsetterProtection.LastError);
+                    this.Stop();
+                }
                 return;
             }
 
@@ -167,11 +273,44 @@ namespace AutoDuty.Helpers
                 }
                 else*/
                 {
-                    this.DebugLog("Starting TurnIn proper");
-                    AutoRetainer_IPCSubscriber.EnqueueGCInitiation();
+                    if (!this.turninEnqueued)
+                    {
+                        this.DebugLog("Starting TurnIn proper");
+                        AutoRetainer_IPCSubscriber.EnqueueGCInitiation();
+                        this.turninEnqueued = true;
+                    }
                 }
                 return;
             }
         }
+
+        private void ReportProtectionFailure(string error)
+        {
+            string message = Loc.Get("ConfigTab.BetweenLoop.GCTurninGearsetterProtectionFailed", error);
+            Svc.Log.Warning($"[GCTurnin] {message}");
+            DuoLog.Warning(message);
+        }
+
+        private bool PrepareArmouryProtection()
+        {
+            if (!this.gearsetterProtection.Prepare(out string error))
+            {
+                this.ReportProtectionFailure(error);
+                return false;
+            }
+
+            this.phase = this.gearsetterProtection.PlannedMoveCount > 0
+                ? TurninPhase.Protecting
+                : TurninPhase.TurningIn;
+            return true;
+        }
+
+        private void ReportGearsetUpdateFailure(string error)
+        {
+            string message = Loc.Get("ConfigTab.BetweenLoop.GCTurninGearsetterGearsetUpdateFailed", error);
+            Svc.Log.Warning($"[GCTurnin] {message}");
+            DuoLog.Warning(message);
+        }
+
     }
 }

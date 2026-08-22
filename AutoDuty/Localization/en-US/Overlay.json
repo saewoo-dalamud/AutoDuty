@@ -19,8 +19,10 @@
       "ExtractMissing": "Materia Extraction requires having completed quest: Forging the Spirit",
       "Repair": "Click to Repair",
       "Equip": "Click to Equip Gear",
+      "EquipAllGearsets": "Update every gearset for which Gearsetter recommends an upgrade, then restore the original gearset",
       "Coffers": "Click to open coffers"
     },
+    "GearsetterGearsetUpdateFailed": "Gearsetter gearset update stopped: {0}",
     "Popup": {
       "MissingPlugin": "Missing Plugin",
       "MissingQuestCompletion": "Missing Quest Completion"
