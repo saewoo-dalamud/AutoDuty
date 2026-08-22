@@ -48,10 +48,14 @@ jobs:
       - name: Locate package
         id: package
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           $zip = Get-ChildItem -Path "$env:PROJECT_NAME/bin/Release" -Filter *.zip -Recurse | Select-Object -First 1
           if (-not $zip) { throw "No package zip produced by DalamudPackager - check build output" }
-          Copy-Item $zip.FullName latest.zip
+          $assetName = "$env:PROJECT_NAME-$env:RELEASE_VERSION.zip"
+          Copy-Item $zip.FullName $assetName
+          "asset_name=$assetName" >> $env:GITHUB_OUTPUT
 
       - name: Build release notes
         id: notes
@@ -69,7 +73,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ steps.version.outputs.version }}" latest.zip --title "${{ steps.version.outputs.version }}" --notes-file notes.md --repo ${{ github.repository }}
+          gh release create "${{ steps.version.outputs.version }}" "${{ steps.package.outputs.asset_name }}" --title "${{ steps.version.outputs.version }}" --notes-file notes.md --repo ${{ github.repository }}
 
       # GITHUB_TOKEN is scoped to this repo only, so notifying MyDalamudPlugins
       # (a different repo) needs a PAT with repo access to it.
