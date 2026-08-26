@@ -108,7 +108,7 @@
       "AutoEquipGear": "自动装备推荐装备",
       "GearSourceHelp": "原版 - 仅使用兵装库(Armory Chest)装备\n装备管理器 - 调用 Gearsetter，可将淘汰装备移至背包\n造型师 - 使用 Stylist 插件设置",
       "MoveOldToInventory": "将旧物品移至背包",
-      "MoveOldToInventoryHelp": "除武器外，将被替换的装备移至背包。",
+      "MoveOldToInventoryHelp": "将被替换的装备移至背包。仍被其他装备栏使用的装备将保留在武具库中，不会被移动。",
       "RequiresGearsetterOrStylist": "* 兵装库外的物品需要 Gearsetter 或 Stylist 插件",
       "AutoRepair": "自动修理",
       "Self": "自行修理",

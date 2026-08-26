@@ -108,7 +108,7 @@
       "AutoEquipGear": "Équiper automatiquement l'équipement recommandé",
       "GearSourceHelp": "Vanilla - Utilise l'équipement du coffre d'armes uniquement\\nGearsetter - Demande à Gearsetter, peut déplacer les anciens objets dans l'inventaire\\nStylist - Utilise vos paramètres Stylist",
       "MoveOldToInventory": "Déplacer les anciens objets dans l'inventaire",
-      "MoveOldToInventoryHelp": "Sauf pour les armes, ceci déplacera l'équipement à remplacer dans l'inventaire.",
+      "MoveOldToInventoryHelp": "Ceci déplacera l'équipement à remplacer dans l'inventaire. L'équipement encore utilisé par un autre équipement reste dans le Coffre d'armes au lieu d'être déplacé.",
       "RequiresGearsetterOrStylist": "* Les objets hors du coffre d'armes nécessitent le plugin Gearsetter ou Stylist",
       "AutoRepair": "Réparation automatique",
       "Self": "Soi-même",

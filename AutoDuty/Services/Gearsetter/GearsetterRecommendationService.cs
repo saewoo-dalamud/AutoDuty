@@ -20,6 +20,12 @@ internal readonly record struct GearsetterRecommendation(
 /// </summary>
 internal static unsafe class GearsetterRecommendationService
 {
+    // RaptureGearsetModule stores up to 100 gearset entries (FixedSizeArray100<GearsetEntry>). Entry IDs
+    // are assigned at creation time and never get compacted/reused when a gearset is deleted, so this is
+    // the only safe loop bound - RaptureGearsetModule.NumGearsets is a count of currently-existing
+    // gearsets, not the highest entry ID in use.
+    private const int MaxGearsetEntries = 100;
+
     internal static IReadOnlyList<GearsetterRecommendation> CollectRecommendations()
     {
         if (!Gearsetter_IPCSubscriber.IsEnabled)
@@ -32,8 +38,16 @@ internal static unsafe class GearsetterRecommendationService
         List<GearsetterRecommendation> recommendations = [];
         HashSet<(int GearsetId, InventoryType InventoryType, int InventorySlot)> seenRecommendations = [];
 
-        for (int gearsetId = 0; gearsetId < gearsetModule->NumGearsets; gearsetId++)
+        // NumGearsets is a COUNT of existing gearsets, not "highest entry ID + 1" - entry IDs don't get
+        // compacted when a gearset is deleted, so a later-created gearset can sit at a raw index well past
+        // NumGearsets (e.g. gearset #35 at entry ID 34 when only 20 gearsets currently exist). Looping to
+        // NumGearsets silently never reaches it. Scan the full fixed capacity instead and let
+        // IsValidGearset/GearsetFlag.Exists do the actual filtering.
+        for (int gearsetId = 0; gearsetId < MaxGearsetEntries; gearsetId++)
         {
+            if (!gearsetModule->IsValidGearset(gearsetId))
+                continue;
+
             RaptureGearsetModule.GearsetEntry* gearset = gearsetModule->GetGearset(gearsetId);
             if (gearset == null || !gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
                 continue;
@@ -82,5 +96,39 @@ internal static unsafe class GearsetterRecommendationService
         }
 
         return protectedSlots;
+    }
+
+    // 모든(존재하는) 기어셋이 참조하는 아이템ID 전체를 모음. FFXIV 기어셋은 슬롯 위치가 아니라
+    // 아이템ID로 저장되므로, 어떤 아이템이 인벤토리 어디에 있든 여기 포함되면 "어느 기어셋이든
+    // 이 아이템을 필요로 한다"는 뜻임.
+    //
+    // excludeGearsetId: 지금 갱신 중인 기어셋은 제외해야 함 - RaptureGearsetModule.UpdateGearset()으로
+    // 저장하기 전까지는 그 기어셋의 저장된 정의가 여전히 "방금 갈아입어서 빼낸 옛 아이템"을
+    // 가리키고 있어서, 제외하지 않으면 그 옛 아이템이 "지금 자기 자신이 여전히 쓰는 아이템"으로
+    // 잘못 판정되어 가방으로 절대 옮겨지지 않는 버그가 있었음.
+    internal static HashSet<uint> CollectAllGearsetItemIds(int? excludeGearsetId = null)
+    {
+        HashSet<uint> itemIds = [];
+
+        RaptureGearsetModule* gearsetModule = RaptureGearsetModule.Instance();
+        if (gearsetModule == null)
+            return itemIds;
+
+        // NumGearsets is a count, not a max index - see the comment in CollectRecommendations().
+        for (int gearsetId = 0; gearsetId < MaxGearsetEntries; gearsetId++)
+        {
+            if (gearsetId == excludeGearsetId || !gearsetModule->IsValidGearset(gearsetId))
+                continue;
+
+            RaptureGearsetModule.GearsetEntry* gearset = gearsetModule->GetGearset(gearsetId);
+            if (gearset == null || !gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
+                continue;
+
+            foreach (RaptureGearsetModule.GearsetItem item in gearset->Items)
+                if (item.ItemId > 0)
+                    itemIds.Add(item.ItemId);
+        }
+
+        return itemIds;
     }
 }

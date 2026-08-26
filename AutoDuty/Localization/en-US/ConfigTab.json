@@ -112,7 +112,7 @@
       "AutoEquipGear": "Auto Equip Recommended Gear",
       "GearSourceHelp": "Vanilla - Uses Gear from Armory Chest Only\nGearsetter - Asks gearsetter, can move old items to inventory\nStylist - Uses your stylist settings",
       "MoveOldToInventory": "Move old items to inventory",
-      "MoveOldToInventoryHelp": "Except for weapons, this will move the gear to be replaced to the inventory.",
+      "MoveOldToInventoryHelp": "This will move the gear to be replaced to the inventory. Gear still used by another gearset is left in the Armoury Chest instead of being moved.",
       "RequiresGearsetterOrStylist": "* Items outside the armoury chest requires Gearsetter or Stylist plugin",
       "AutoRepair": "Auto Repair",
       "Self": "Self",

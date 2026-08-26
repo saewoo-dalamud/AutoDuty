@@ -111,7 +111,7 @@
       "AutoEquipGear": "おすすめ装備を自動装備",
       "GearSourceHelp": "Vanilla：アーマリーチェスト内の装備のみを使用します。\nGearsetter：Gearsetterの推奨装備を使用します。旧装備は設定により所持品へ移動できます。\nStylist：Stylistの設定を使用します。",
       "MoveOldToInventory": "旧装備を所持品へ移動",
-      "MoveOldToInventoryHelp": "メインアームとサブアームを除き、旧装備を所持品へ移動します。",
+      "MoveOldToInventoryHelp": "旧装備を所持品へ移動します。他のギアセットでまだ使用されている装備は移動せず、兵装庫に残します。",
       "RequiresGearsetterOrStylist": "* アーマリーチェスト外の装備にはGearsetterまたはStylistが必要です",
       "AutoRepair": "自動修理",
       "Self": "自己",

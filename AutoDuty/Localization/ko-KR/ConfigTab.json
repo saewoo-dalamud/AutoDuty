@@ -112,7 +112,7 @@
       "AutoEquipGear": "추천 장비 자동 장착",
       "GearSourceHelp": "Vanilla - 무기고 내부만 사용\nGearsetter - gearsetter에 문의하여 오래된 장비를 소지품으로 이동 가능\nStylist - stylist 설정 사용",
       "MoveOldToInventory": "오래된 장비를 소지품으로 이동",
-      "MoveOldToInventoryHelp": "무기 이외의 교체 대상 장비를 소지품으로 이동합니다.",
+      "MoveOldToInventoryHelp": "교체 대상 장비를 소지품으로 이동합니다. 다른 기어셋에서 아직 사용 중인 장비는 이동하지 않고 장비함에 그대로 둡니다.",
       "RequiresGearsetterOrStylist": "* 무기고 외부 장비는 Gearsetter 또는 Stylist가 필요합니다",
       "AutoRepair": "자동 수리",
       "Self": "자가수리",

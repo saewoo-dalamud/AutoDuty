@@ -109,7 +109,7 @@
       "AutoEquipGear": "自動裝備推薦裝備",
       "GearSourceHelp": "Vanilla - 僅使用兵裝庫內的裝備\nGearsetter - 調用 Gearsetter 可將舊裝備移至背包\nStylist - 使用您的 Stylist 設定",
       "MoveOldToInventory": "將舊裝備移至背包",
-      "MoveOldToInventoryHelp": "除武器外，將被替換下來的裝備移至背包。",
+      "MoveOldToInventoryHelp": "將被替換下來的裝備移至背包。仍被其他裝備欄使用的裝備將保留在武裝庫中，不會被移動。",
       "RequiresGearsetterOrStylist": "* 兵裝庫外的物品需要 Gearsetter 或 Stylist 插件",
       "AutoRepair": "自動修理",
       "Self": "自行修理",
