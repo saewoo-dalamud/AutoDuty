@@ -147,6 +147,8 @@
       "AutoOpenCoffersHelp": "各ループ間で装備箱（例: ナイト武器箱）を自動開封します",
       "OpenCoffersWithGearset": "開封時のギアセット: ",
       "CurrentGearset": "現在のギアセット",
+      "AutoOpenPaladinWeaponCoffer": "ナイト武器箱のみ自動開封",
+      "AutoOpenPaladinWeaponCofferHelp": "このオプションを有効にすると、通常の箱設定(ギアセット切り替え、ブラックリスト)を無視して、ナイト武器箱のみを自動的に開封します",
       "UseBlacklist": "ブラックリストを使用",
       "UseBlacklistHelp": "自動開封しない箱を指定できます。",
       "SelectCoffer": "装備箱を選択",

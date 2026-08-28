@@ -149,6 +149,8 @@
       "AutoOpenCoffersHelp": "AutoDuty will open gear coffers (like paladin arms) between each loop",
       "OpenCoffersWithGearset": "Open Coffers with Gearset: ",
       "CurrentGearset": "Current Gearset",
+      "AutoOpenPaladinWeaponCoffer": "Auto Open Paladin's Weapon Coffer Only",
+      "AutoOpenPaladinWeaponCofferHelp": "When enabled, ignores the general coffer options (gearset switching, blacklist) and only automatically opens Paladin's Weapon coffers",
       "UseBlacklist": "Use Blacklist",
       "UseBlacklistHelp": "Option to disable some coffers from being opened automatically.",
       "SelectCoffer": "Select Coffer",

@@ -715,6 +715,7 @@ public class Configuration
     public byte?                    AutoOpenCoffersGearset;
     public bool                     AutoOpenCoffersBlacklistUse;
     public Dictionary<uint, string> AutoOpenCoffersBlacklist = [];
+    public bool                     AutoOpenCoffersPaladinWeapon;
 
     internal bool autoExtractAll = false;
     public bool AutoExtractAll
@@ -2094,92 +2095,108 @@ public static class ConfigTab
                 }
 
                 if (ImGui.Checkbox(Loc.Get("ConfigTab.BetweenLoop.AutoOpenCoffers"), ref Configuration.AutoOpenCoffers))
+                {
+                    if (!Configuration.AutoOpenCoffers)
+                        Configuration.AutoOpenCoffersPaladinWeapon = false;
                     Configuration.Save();
+                }
 
                 ImGuiComponents.HelpMarker(Loc.Get("ConfigTab.BetweenLoop.AutoOpenCoffersHelp"));
+
                 if (Configuration.AutoOpenCoffers)
                     unsafe
                     {
                         ImGui.Indent();
-                        ImGui.Text(Loc.Get("ConfigTab.BetweenLoop.OpenCoffersWithGearset"));
-                        ImGui.AlignTextToFramePadding();
-                        ImGui.SameLine();
 
-                        RaptureGearsetModule* module = RaptureGearsetModule.Instance();
-                        
-                        if (Configuration.AutoOpenCoffersGearset != null && !module->IsValidGearset((int) Configuration.AutoOpenCoffersGearset))
-                        {
-                            Configuration.AutoOpenCoffersGearset = null;
+                        if (ImGui.Checkbox(Loc.Get("ConfigTab.BetweenLoop.AutoOpenPaladinWeaponCoffer"), ref Configuration.AutoOpenCoffersPaladinWeapon))
                             Configuration.Save();
-                        }
 
+                        ImGuiComponents.HelpMarker(Loc.Get("ConfigTab.BetweenLoop.AutoOpenPaladinWeaponCofferHelp"));
 
-                        if (ImGui.BeginCombo("##CofferGearsetSelection", Configuration.AutoOpenCoffersGearset != null ? module->GetGearset(Configuration.AutoOpenCoffersGearset.Value)->NameString : Loc.Get("ConfigTab.BetweenLoop.CurrentGearset")))
+                        using (ImRaii.Disabled(Configuration.AutoOpenCoffersPaladinWeapon))
                         {
-                            if (ImGui.Selectable(Loc.Get("ConfigTab.BetweenLoop.CurrentGearset"), Configuration.AutoOpenCoffersGearset == null))
+                            ImGui.Text(Loc.Get("ConfigTab.BetweenLoop.OpenCoffersWithGearset"));
+                            ImGui.AlignTextToFramePadding();
+                            ImGui.SameLine();
+
+                            RaptureGearsetModule* module = RaptureGearsetModule.Instance();
+
+                            if (Configuration.AutoOpenCoffersGearset != null && !module->IsValidGearset((int) Configuration.AutoOpenCoffersGearset))
                             {
                                 Configuration.AutoOpenCoffersGearset = null;
                                 Configuration.Save();
                             }
 
-                            foreach (RaptureGearsetModule.GearsetEntry gearsetEntry in module->Entries)
+
+                            if (ImGui.BeginCombo("##CofferGearsetSelection", Configuration.AutoOpenCoffersGearset != null ? module->GetGearset(Configuration.AutoOpenCoffersGearset.Value)->NameString : Loc.Get("ConfigTab.BetweenLoop.CurrentGearset")))
                             {
-                                if (module->IsValidGearset(gearsetEntry.Id) && ImGui.Selectable($"{gearsetEntry.Id+1}: {gearsetEntry.NameString}", Configuration.AutoOpenCoffersGearset == gearsetEntry.Id))
+                                if (ImGui.Selectable(Loc.Get("ConfigTab.BetweenLoop.CurrentGearset"), Configuration.AutoOpenCoffersGearset == null))
                                 {
-                                    Configuration.AutoOpenCoffersGearset = gearsetEntry.Id;
+                                    Configuration.AutoOpenCoffersGearset = null;
                                     Configuration.Save();
                                 }
-                            }
 
-                            ImGui.EndCombo();
-                        }
+                                foreach (RaptureGearsetModule.GearsetEntry gearsetEntry in module->Entries)
+                                {
+                                    if (module->IsValidGearset(gearsetEntry.Id) && ImGui.Selectable($"{gearsetEntry.Id+1}: {gearsetEntry.NameString}", Configuration.AutoOpenCoffersGearset == gearsetEntry.Id))
+                                    {
+                                        Configuration.AutoOpenCoffersGearset = gearsetEntry.Id;
+                                        Configuration.Save();
+                                    }
+                                }
 
-                        if (ImGui.Checkbox(Loc.Get("ConfigTab.BetweenLoop.UseBlacklist"), ref Configuration.AutoOpenCoffersBlacklistUse))
-                            Configuration.Save();
-
-                        ImGuiComponents.HelpMarker(Loc.Get("ConfigTab.BetweenLoop.UseBlacklistHelp"));
-                        if (Configuration.AutoOpenCoffersBlacklistUse)
-                        {
-                            if (ImGui.BeginCombo(Loc.Get("ConfigTab.BetweenLoop.SelectCoffer"), autoOpenCoffersSelectedItem.Value))
-                            {
-                                ImGui.InputTextWithHint(Loc.Get("ConfigTab.BetweenLoop.CofferName"), Loc.Get("ConfigTab.BetweenLoop.CofferNameHint"), ref autoOpenCoffersNameInput, 1000);
-                                foreach (KeyValuePair<uint, Item> item in 
-                                         Items.Where(x => CofferHelper.ValidCoffer(x.Value) && x.Value.Name.ToString().Contains(autoOpenCoffersNameInput, StringComparison.InvariantCultureIgnoreCase)))
-                                    if (ImGui.Selectable($"{item.Value.Name.ToString()}"))
-                                        autoOpenCoffersSelectedItem = new KeyValuePair<uint, string>(item.Key, item.Value.Name.ToString());
                                 ImGui.EndCombo();
                             }
 
-                            ImGui.SameLine(0, 5);
-                            using (ImRaii.Disabled(autoOpenCoffersSelectedItem.Value.IsNullOrEmpty()))
                             {
-                                if (ImGui.Button(Loc.Get("ConfigTab.BetweenLoop.AddCoffer")))
-                                {
-                                    if (!Configuration.AutoOpenCoffersBlacklist.TryAdd(autoOpenCoffersSelectedItem.Key, autoOpenCoffersSelectedItem.Value))
-                                    {
-                                        Configuration.AutoOpenCoffersBlacklist.Remove(autoOpenCoffersSelectedItem.Key);
-                                        Configuration.AutoOpenCoffersBlacklist.Add(autoOpenCoffersSelectedItem.Key, autoOpenCoffersSelectedItem.Value);
-                                    }
-                                    autoOpenCoffersSelectedItem = new KeyValuePair<uint, string>(0, "");
+                                if (ImGui.Checkbox(Loc.Get("ConfigTab.BetweenLoop.UseBlacklist"), ref Configuration.AutoOpenCoffersBlacklistUse))
                                     Configuration.Save();
-                                }
-                            }
-                            
-                            if (!ImGui.BeginListBox("##CofferBlackList", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, (ImGui.GetTextLineHeightWithSpacing() * Configuration.AutoOpenCoffersBlacklist.Count) + 5))) 
-                                return;
 
-                            foreach (KeyValuePair<uint, string> item in Configuration.AutoOpenCoffersBlacklist)
-                            {
-                                ImGui.Selectable($"{item.Value}");
-                                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                                ImGuiComponents.HelpMarker(Loc.Get("ConfigTab.BetweenLoop.UseBlacklistHelp"));
+                                if (Configuration.AutoOpenCoffersBlacklistUse)
                                 {
-                                    Configuration.AutoOpenCoffersBlacklist.Remove(item);
-                                    Configuration.Save();
+                                    if (ImGui.BeginCombo(Loc.Get("ConfigTab.BetweenLoop.SelectCoffer"), autoOpenCoffersSelectedItem.Value))
+                                    {
+                                        ImGui.InputTextWithHint(Loc.Get("ConfigTab.BetweenLoop.CofferName"), Loc.Get("ConfigTab.BetweenLoop.CofferNameHint"), ref autoOpenCoffersNameInput, 1000);
+                                        foreach (KeyValuePair<uint, Item> item in
+                                                 Items.Where(x => CofferHelper.ValidCoffer(x.Value) && x.Value.Name.ToString().Contains(autoOpenCoffersNameInput, StringComparison.InvariantCultureIgnoreCase)))
+                                            if (ImGui.Selectable($"{item.Value.Name.ToString()}"))
+                                                autoOpenCoffersSelectedItem = new KeyValuePair<uint, string>(item.Key, item.Value.Name.ToString());
+                                        ImGui.EndCombo();
+                                    }
+
+                                    ImGui.SameLine(0, 5);
+                                    using (ImRaii.Disabled(autoOpenCoffersSelectedItem.Value.IsNullOrEmpty()))
+                                    {
+                                        if (ImGui.Button(Loc.Get("ConfigTab.BetweenLoop.AddCoffer")))
+                                        {
+                                            if (!Configuration.AutoOpenCoffersBlacklist.TryAdd(autoOpenCoffersSelectedItem.Key, autoOpenCoffersSelectedItem.Value))
+                                            {
+                                                Configuration.AutoOpenCoffersBlacklist.Remove(autoOpenCoffersSelectedItem.Key);
+                                                Configuration.AutoOpenCoffersBlacklist.Add(autoOpenCoffersSelectedItem.Key, autoOpenCoffersSelectedItem.Value);
+                                            }
+                                            autoOpenCoffersSelectedItem = new KeyValuePair<uint, string>(0, "");
+                                            Configuration.Save();
+                                        }
+                                    }
+
+                                    if (!ImGui.BeginListBox("##CofferBlackList", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, (ImGui.GetTextLineHeightWithSpacing() * Configuration.AutoOpenCoffersBlacklist.Count) + 5)))
+                                        return;
+
+                                    foreach (KeyValuePair<uint, string> item in Configuration.AutoOpenCoffersBlacklist)
+                                    {
+                                        ImGui.Selectable($"{item.Value}");
+                                        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                                        {
+                                            Configuration.AutoOpenCoffersBlacklist.Remove(item);
+                                            Configuration.Save();
+                                        }
+                                    }
+                                    ImGui.EndListBox();
                                 }
                             }
-                            ImGui.EndListBox();
                         }
-                        
+
                         ImGui.Unindent();
                     }
 

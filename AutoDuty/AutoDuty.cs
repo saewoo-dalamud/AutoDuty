@@ -1180,7 +1180,12 @@ public sealed class AutoDuty : IDalamudPlugin
             }
 
             if (Configuration.AutoOpenCoffers)
-                EnqueueActiveHelper<CofferHelper>();
+            {
+                if (Configuration.AutoOpenCoffersPaladinWeapon)
+                    EnqueueActiveHelper<PaladinWeaponCofferHelper>();
+                else
+                    EnqueueActiveHelper<CofferHelper>();
+            }
 
             if(AutoRetainer_IPCSubscriber.IsEnabled)
                 if(Configuration.EnableAutoRetainerMultiMode)
