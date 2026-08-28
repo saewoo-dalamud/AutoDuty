@@ -269,6 +269,7 @@ public sealed class AutoDuty : IDalamudPlugin
     internal          string                   action             = "";
     internal          string                   pathFile           = "";
     internal readonly TaskManager              taskManager        = null!;
+    private readonly  BetweenLoopHelpers       betweenLoopHelpers = null!;
     internal          Job                      jobLastKnown;
     internal          DutyState                dutyState         = DutyState.None;
     internal          PathAction               pathAction        = new();
@@ -337,6 +338,7 @@ public sealed class AutoDuty : IDalamudPlugin
                                                    TimeLimitMS = 10_000,
                                                    ShowDebug = true
                                                });
+            this.betweenLoopHelpers = new BetweenLoopHelpers(this.taskManager);
 
             TrustHelper.PopulateTrustMembers();
             ContentHelper.PopulateDuties();
@@ -1109,8 +1111,8 @@ public sealed class AutoDuty : IDalamudPlugin
 
                 this.AutoConsume();
 
-                if (this.LevelingModeEnum == LevelingMode.None) 
-                    this.AutoEquipRecommendedGear();
+                if (this.LevelingModeEnum == LevelingMode.None)
+                    this.betweenLoopHelpers.AutoEquipRecommendedGear();
 
                 if (Configuration.AutoRepair && InventoryHelper.CanRepair())
                 {
@@ -1254,64 +1256,9 @@ public sealed class AutoDuty : IDalamudPlugin
             }
         }
 
+        // moved to BetweenLoopHelpers.Run() — AutoDuty/BetweenLoopHelpers.cs
         if (between)
-        {
-            this.AutoEquipRecommendedGear();
-
-            if(Configuration.GlamourChestEntrust)
-                EnqueueActiveHelper<GlamourChestHelper>();
-
-            if(Configuration.ArmoireEntrust)
-                EnqueueActiveHelper<ArmoireHelper>();
-
-            if (Configuration.AutoRepair && InventoryHelper.CanRepair()) 
-                EnqueueActiveHelper<RepairHelper>();
-
-            if (Configuration.AutoExtract && QuestManager.IsQuestComplete(66174)) 
-                EnqueueActiveHelper<ExtractHelper>();
-
-            if (Configuration.AutoDesynth) 
-                EnqueueActiveHelper<DesynthHelper>();
-
-            if (Configuration.AutoGCTurnin && (!Configuration.AutoGCTurninSlotsLeftBool || InventoryManager.Instance()->GetEmptySlotsInBag() <= Configuration.AutoGCTurninSlotsLeft) && PlayerHelper.GetGrandCompanyRank() > 5)
-                EnqueueActiveHelper<GCTurninHelper>();
-
-            
-            if (Configuration.TripleTriadRegister) 
-                EnqueueActiveHelper<TripleTriadCardUseHelper>();
-            if (Configuration.TripleTriadSell) 
-                EnqueueActiveHelper<TripleTriadCardSellHelper>();
-        
-
-            if (Configuration.DiscardItems) 
-                EnqueueActiveHelper<DiscardHelper>();
-
-            if (Configuration.DutyModeEnum != DutyMode.Squadron && Configuration.RetireMode)
-            {
-                this.taskManager.Enqueue(() => Svc.Log.Debug($"Retire Between Loop Action"));
-
-                switch (Configuration.RetireLocationEnum)
-                {
-                    case RetireLocation.GC_Barracks:
-                        this.taskManager.Enqueue(() => GotoBarracksHelper.Invoke(), "Loop-GotoBarracksInvoke");
-                        break;
-                    case RetireLocation.Inn:
-                        this.taskManager.Enqueue(() => GotoInnHelper.Invoke(), "Loop-GotoInnInvoke");
-                        break;
-                    case RetireLocation.Apartment:
-                    case RetireLocation.Personal_Home:
-                    case RetireLocation.FC_Estate:
-                    default:
-                        Svc.Log.Info($"{(Housing)Configuration.RetireLocationEnum} {Configuration.RetireLocationEnum}");
-                        this.taskManager.Enqueue(() => GotoHousingHelper.Invoke((Housing)Configuration.RetireLocationEnum), "Loop-GotoHousingInvoke");
-                        break;
-                }
-
-                this.taskManager.EnqueueDelay(50);
-                this.taskManager.Enqueue(() => GotoHousingHelper.State != ActionState.Running && GotoBarracksHelper.State != ActionState.Running && GotoInnHelper.State != ActionState.Running, "Loop-WaitGotoComplete",
-                                         new TaskManagerConfiguration(int.MaxValue));
-            }
-        }
+            this.betweenLoopHelpers.Run();
 
         void EnqueueActiveHelper<T>() where T : ActiveHelperBase<T>, new()
         {
@@ -1506,17 +1453,7 @@ public sealed class AutoDuty : IDalamudPlugin
         this.taskManager.Enqueue(() => SchedulerHelper.ScheduleAction("SetStageStopped", () => this.Stage = Stage.Stopped, 1));
     }
 
-    private void AutoEquipRecommendedGear()
-    {
-        if (Configuration.AutoEquipRecommendedGear)
-        {
-            this.taskManager.Enqueue(() => Svc.Log.Debug($"AutoEquipRecommendedGear Between Loop Action"));
-            this.taskManager.Enqueue(() => AutoEquipHelper.Invoke(), "AutoEquipRecommendedGear-Invoke");
-            this.taskManager.EnqueueDelay(50);
-            this.taskManager.Enqueue(() => AutoEquipHelper.State != ActionState.Running, "AutoEquipRecommendedGear-WaitAutoEquipComplete", new TaskManagerConfiguration(int.MaxValue));
-            this.taskManager.Enqueue(() => PlayerHelper.IsReadyFull, "AutoEquipRecommendedGear-WaitANotIsOccupied");
-        }
-    }
+    // moved to BetweenLoopHelpers.AutoEquipRecommendedGear() — AutoDuty/BetweenLoopHelpers.cs
 
     private void AutoConsume()
     {
