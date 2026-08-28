@@ -30,6 +30,7 @@ namespace AutoDuty.Helpers
         {
             this._maxDesynthLevel = PlayerHelper.GetMaxDesynthLevel();
             this._gearsetterProtectedSlots = GearsetterRecommendationService.CollectAutoDesynthProtectedSlots();
+            this._gearsetItemIds = Configuration.AutoDesynthNoGearset ? GearsetterRecommendationService.CollectAllGearsetItemIds() : null;
             if(this.NextCategory(true))
                 base.Start();
         }
@@ -37,6 +38,8 @@ namespace AutoDuty.Helpers
         private float _maxDesynthLevel = 1;
 
         private HashSet<(InventoryType InventoryType, int Slot)> _gearsetterProtectedSlots = [];
+
+        private HashSet<uint>? _gearsetItemIds;
 
         private AgentSalvage.SalvageItemCategory curCategory;
 
@@ -95,8 +98,6 @@ namespace AutoDuty.Helpers
                 }
                 else if (addonSalvageItemSelector->ItemCount > 0)
                 {
-                    HashSet<uint>? gearsetItemIds = null;
-
                     bool foundOne = false;
                     for (int i = 0; i < AgentSalvage.Instance()->ItemCount; i++)
                     {
@@ -116,29 +117,8 @@ namespace AutoDuty.Helpers
 
                         if (!Configuration.AutoDesynthSkillUp || (desynthLevel < itemLevel + Configuration.AutoDesynthSkillUpLimit && desynthLevel < this._maxDesynthLevel))
                         {
-                            if (Configuration.AutoDesynthNoGearset)
-                            {
-                                if (gearsetItemIds == null)
-                                {
-                                    gearsetItemIds = [];
-
-                                    RaptureGearsetModule* gearsetModule = RaptureGearsetModule.Instance();
-                                    byte                  num           = gearsetModule->NumGearsets;
-                                    for (byte j = 0; j < num; j++)
-                                    {
-                                        foreach (RaptureGearsetModule.GearsetEntry entry in gearsetModule->Entries)
-                                            foreach (RaptureGearsetModule.GearsetItem gearsetItem in entry.Items)
-                                            {
-                                                uint gearsetItemItemId = gearsetItem.ItemId;
-                                                if(gearsetItemItemId > 0) 
-                                                    gearsetItemIds.Add(gearsetItemItemId);
-                                            }
-                                    }
-                                }
-
-                                if (gearsetItemIds.Contains(inventoryItem->GetItemId()))
-                                    continue;
-                            }
+                            if (Configuration.AutoDesynthNoGearset && (this._gearsetItemIds?.Contains(inventoryItem->GetItemId()) ?? false))
+                                continue;
 
                             if (this._gearsetterProtectedSlots.Contains((item.InventoryType, (int)item.InventorySlot)))
                             {
